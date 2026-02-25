@@ -15,7 +15,7 @@ const NAV_ITEMS = [
     { id: 'settings', label: 'Settings', icon: Settings, route: null, roles: ['admin'] },
 ];
 
-const Sidebar = ({ onSelectClient, selectedClientIds = [], onAddClient, onCompare, activeNav = 'dashboard' }) => {
+const Sidebar = ({ onSelectClient, selectedClientIds = [], onAddClient, onCompare, activeNav = 'dashboard', onNavChange }) => {
     const [collapsed, setCollapsed] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [clients, setClients] = useState([]);
@@ -112,6 +112,9 @@ const Sidebar = ({ onSelectClient, selectedClientIds = [], onAddClient, onCompar
                         if (item.id === 'settings') {
                             e.preventDefault();
                             openSettings();
+                        } else if (!item.route && onNavChange) {
+                            e.preventDefault();
+                            onNavChange(item.id);
                         }
                     };
 

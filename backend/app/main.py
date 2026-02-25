@@ -34,7 +34,7 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS Middleware
-# TEMPORARY: Allow all origins and disable credentials for connectivity diagnostics
+# Maximum permissiveness for connectivity resolution
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
-        port=8000,
+        port=8005,
         reload=settings.DEBUG
     )
 

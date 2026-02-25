@@ -150,6 +150,14 @@ export default function DashboardPage() {
   const handleToggleChat = useCallback(() => setChatOpen(prev => !prev), []);
   const handleCloseChat = useCallback(() => setChatOpen(false), []);
 
+  const handleNavChange = useCallback((navId) => {
+    if (navId === 'dashboard') {
+      setActiveTab('dashboard');
+    } else if (navId === 'reports') {
+      setActiveTab('portfolio');
+    }
+  }, []);
+
   // Loading state
   if (authLoading) {
     return (
@@ -183,7 +191,8 @@ export default function DashboardPage() {
         selectedClientIds={selectedClientIds}
         onAddClient={() => setShowOnboarding(true)}
         onCompare={() => { }}
-        activeNav="dashboard"
+        activeNav={activeTab === 'portfolio' ? 'reports' : 'dashboard'}
+        onNavChange={handleNavChange}
       />
 
       {/* Main Content */}

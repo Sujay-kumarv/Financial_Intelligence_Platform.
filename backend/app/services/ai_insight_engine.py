@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from app.db.models import Company, FinancialStatement, ComputedMetric, ClientActivity
+from app.db.models import Company, FinancialStatement, ComputedMetric, ClientActivity, RiskAssessment
 from app.services.llm_service import groq_service as llm_service
 
 class AIInsightEngine:
