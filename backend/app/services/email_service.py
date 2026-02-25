@@ -1,0 +1,107 @@
+"""
+Email Service
+Sends credential emails to approved users via SMTP
+"""
+import smtplib
+import logging
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from app.config import settings
+
+logger = logging.getLogger(__name__)
+
+
+def send_credentials_email(to_email: str, full_name: str, password: str) -> bool:
+    """
+    Send login credentials email to a newly approved user.
+    Returns True if sent successfully, False otherwise.
+    """
+    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+        logger.warning(
+            f"SMTP not configured. Credentials for {to_email}: password={password}"
+        )
+        print(f"\n{'='*60}")
+        print(f"EMAIL NOT SENT (SMTP not configured)")
+        print(f"To: {to_email}")
+        print(f"Name: {full_name}")
+        print(f"Password: {password}")
+        print(f"{'='*60}\n")
+        return False
+
+    subject = f"Welcome to {settings.SMTP_FROM_NAME} — Your Login Credentials"
+
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: 'Segoe UI', Arial, sans-serif; background: #060E1F; color: #F5F7FA; margin: 0; padding: 40px 20px; }}
+            .container {{ max-width: 520px; margin: 0 auto; background: linear-gradient(135deg, #0B1A39 0%, #0D2247 100%); border-radius: 24px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; }}
+            .header {{ padding: 32px 32px 24px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }}
+            .logo {{ display: inline-block; width: 56px; height: 56px; background: linear-gradient(135deg, #FFB300, #D4A017); border-radius: 16px; line-height: 56px; font-size: 20px; font-weight: 800; color: #060E1F; }}
+            .title {{ font-size: 22px; font-weight: 700; color: #FFFFFF; margin: 16px 0 4px; }}
+            .subtitle {{ font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }}
+            .body {{ padding: 32px; }}
+            .greeting {{ font-size: 15px; color: #94a3b8; margin-bottom: 24px; line-height: 1.6; }}
+            .cred-box {{ background: rgba(255,255,255,0.04); border: 1px solid rgba(255,179,0,0.15); border-radius: 16px; padding: 24px; margin: 20px 0; }}
+            .cred-label {{ font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #FFB300; margin-bottom: 6px; }}
+            .cred-value {{ font-size: 16px; font-weight: 600; color: #FFFFFF; font-family: 'Courier New', monospace; word-break: break-all; }}
+            .note {{ font-size: 12px; color: #64748b; margin-top: 24px; line-height: 1.5; }}
+            .footer {{ padding: 20px 32px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); }}
+            .footer-text {{ font-size: 11px; color: #475569; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div class="logo">FC</div>
+                <div class="title">Welcome Aboard!</div>
+                <div class="subtitle">{settings.SMTP_FROM_NAME}</div>
+            </div>
+            <div class="body">
+                <div class="greeting">
+                    Hi <strong style="color:#FFFFFF">{full_name}</strong>,<br><br>
+                    Your account has been approved! Here are your login credentials:
+                </div>
+                <div class="cred-box">
+                    <div class="cred-label">Email</div>
+                    <div class="cred-value">{to_email}</div>
+                </div>
+                <div class="cred-box">
+                    <div class="cred-label">Password</div>
+                    <div class="cred-value">{password}</div>
+                </div>
+                <div class="note">
+                    ⚠️ Please change your password after your first login for security purposes.
+                </div>
+            </div>
+            <div class="footer">
+                <div class="footer-text">
+                    {settings.SMTP_FROM_NAME} &bull; Sujay Kumar AI Studio
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_USER}>"
+    msg["To"] = to_email
+    msg.attach(MIMEText(html_body, "html"))
+
+    try:
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=15) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            server.sendmail(settings.SMTP_USER, to_email, msg.as_string())
+        logger.info(f"Credentials email sent to {to_email}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send email to {to_email}: {e}")
+        print(f"\nEMAIL SEND FAILED: {e}")
+        print(f"Credentials for {to_email}: password={password}\n")
+        return False

@@ -1,0 +1,46 @@
+﻿Memory Service: ChromaDB not available. Using dummy storage.
+CORS Allowed Origins: ['*']
+/openapi.json [{'HEAD', 'GET'}] - openapi
+/api/docs [{'HEAD', 'GET'}] - swagger_ui_html
+/docs/oauth2-redirect [{'HEAD', 'GET'}] - swagger_ui_redirect
+/api/redoc [{'HEAD', 'GET'}] - redoc_html
+/api/v1/health [{'GET'}] - health_check
+/api/v1/ [{'GET'}] - root
+/api/v1/auth/login [{'POST'}] - login
+/api/v1/users/me [{'GET'}] - get_current_user
+/api/v1/users/me [{'PUT'}] - update_current_user
+/api/v1/users/ [{'GET'}] - list_users
+/api/v1/users [{'GET'}] - list_users
+/api/v1/users/ [{'POST'}] - create_user
+/api/v1/users/{user_id} [{'PUT'}] - update_user
+/api/v1/users/{user_id} [{'DELETE'}] - delete_user
+/api/v1/companies/ [{'POST'}] - create_company
+/api/v1/companies/ [{'GET'}] - list_companies
+/api/v1/companies [{'GET'}] - list_companies
+/api/v1/companies/{company_id} [{'GET'}] - get_company
+/api/v1/companies/{company_id} [{'PUT'}] - update_company
+/api/v1/companies/{company_id} [{'DELETE'}] - delete_company
+/api/v1/companies/upload-excel [{'POST'}] - upload_company_excel
+/api/v1/companies/connect-api [{'POST'}] - connect_company_api
+/api/v1/upload/ [{'POST'}] - upload_statement
+/api/v1/upload [{'POST'}] - upload_statement
+/api/v1/upload/{statement_id} [{'GET'}] - get_statement
+/api/v1/analysis/portfolio/summary [{'GET'}] - get_portfolio_summary
+/api/v1/analysis/ratios [{'POST'}] - analyze_ratios
+/api/v1/analysis/trends [{'POST'}] - analyze_trends
+/api/v1/analysis/health-score [{'POST'}] - calculate_health_score
+/api/v1/analysis/compare [{'POST'}] - compare_companies
+/api/v1/chat/analyze [{'POST'}] - analyze_document
+/api/v1/chat/message [{'POST'}] - send_message
+/api/v1/chat/feedback [{'POST'}] - create_feedback
+/api/v1/chat/sessions [{'GET'}] - list_sessions
+/api/v1/chat/sessions [{'POST'}] - create_session
+/api/v1/chat/sessions/{session_id}/messages [{'GET'}] - get_session_messages
+/api/v1/register [{'POST'}] - submit_registration
+/api/v1/registrations [{'GET'}] - list_registrations
+/api/v1/registrations/{reg_id}/approve [{'POST'}] - approve_registration
+/api/v1/registrations/{reg_id}/reject [{'POST'}] - reject_registration
+/api/v1/registrations/{reg_id}/resend-email [{'POST'}] - resend_registration_email
+/uploads/photos [None] - photos
+ [None] - frontend
+/api [{'GET'}] - root

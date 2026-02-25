@@ -1,0 +1,1 @@
+"""Core financial package initialization"""

@@ -1,0 +1,32 @@
+{
+  "liquidity": {
+    "current_ratio": 2.0,
+    "quick_ratio": 1.4667,
+    "cash_ratio": 0.6667,
+    "working_capital": 750000,
+    "operating_cash_flow_ratio": 1.6
+  },
+  "profitability": {
+    "gross_profit_margin": 40.0,
+    "operating_profit_margin": 15.0,
+    "net_profit_margin": 10.0,
+    "return_on_assets": 20.0,
+    "return_on_equity": 33.33,
+    "return_on_invested_capital": 22.5
+  },
+  "solvency": {
+    "debt_to_equity": 0.6667,
+    "debt_to_assets": 0.4,
+    "interest_coverage": 14.0,
+    "equity_ratio": 0.6,
+    "debt_service_coverage": null
+  },
+  "efficiency": {
+    "asset_turnover": 2.0,
+    "inventory_turnover": 15.0,
+    "receivables_turnover": 33.3333,
+    "days_sales_outstanding": 10.950010950010949,
+    "days_inventory_outstanding": 24.333333333333332,
+    "cash_conversion_cycle": 35.28334428334428
+  }
+}

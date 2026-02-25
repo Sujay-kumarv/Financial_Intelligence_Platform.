@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Intelligence Platform - Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .status {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-name {
+            color: #666;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .metric-value.good {
+            color: #4CAF50;
+        }
+
+        .metric-value.warning {
+            color: #FF9800;
+        }
+
+        .metric-value.critical {
+            color: #f44336;
+        }
+
+        .health-score {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .score-number {
+            font-size: 3em;
+            color: white;
+            font-weight: bold;
+        }
+
+        .score-label {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .indicators {
+            text-align: left;
+            margin-top: 20px;
+        }
+
+        .indicator {
+            padding: 8px 0;
+            color: #4CAF50;
+        }
+
+        .setup-instructions {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .setup-instructions h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .command {
+            background: #2d2d2d;
+            color: #4CAF50;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+
+        .step {
+            margin: 20px 0;
+        }
+
+        .step-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .feature {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .feature-title {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏦 Financial Intelligence Platform</h1>
+            <p class="subtitle">AI-Powered Financial Decision Intelligence for Banking Sector</p>
+            <span class="status">70% Complete - Backend Ready</span>
+        </div>
+
+        <div class="grid">
+            <!-- Liquidity Ratios -->
+            <div class="card">
+                <h2>💧 Liquidity Ratios</h2>
+                <div class="metric">
+                    <span class="metric-name">Current Ratio</span>
+                    <span class="metric-value good">2.00</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">Quick Ratio</span>
+                    <span class="metric-value good">1.47</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">Cash Ratio</span>
+                    <span class="metric-value good">0.67</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">Working Capital</span>
+                    <span class="metric-value good">$750,000</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">OCF Ratio</span>
+                    <span class="metric-value good">1.60</span>
+                </div>
+            </div>
+
+            <!-- Profitability Ratios -->
+            <div class="card">
+                <h2>📈 Profitability Ratios</h2>
+                <div class="metric">
+                    <span class="metric-name">Gross Profit Margin</span>
+                    <span class="metric-value good">40.00%</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">Operating Margin</span>
+                    <span class="metric-value good">15.00%</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">Net Profit Margin</span>
+                    <span class="metric-value good">10.00%</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">Return on Assets (ROA)</span>
+                    <span class="metric-value good">20.00%</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">Return on Equity (ROE)</span>
+                    <span class="metric-value good">33.33%</span>
+                </div>
+            </div>
+
+            <!-- Solvency Ratios -->
+            <div class="card">
+                <h2>🛡️ Solvency Ratios</h2>
+                <div class="metric">
+                    <span class="metric-name">Debt-to-Equity</span>
+                    <span class="metric-value good">0.67</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">Debt-to-Assets</span>
+                    <span class="metric-value good">0.40</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">Interest Coverage</span>
+                    <span class="metric-value good">14.00</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">Equity Ratio</span>
+                    <span class="metric-value good">0.60</span>
+                </div>
+            </div>
+
+            <!-- Health Score -->
+            <div class="card health-score">
+                <h2>🎯 Financial Health Score</h2>
+                <div class="score-circle">
+                    <div class="score-number">85</div>
+                </div>
+                <div class="score-label">Excellent Financial Health</div>
+                <div class="indicators">
+                    <div class="indicator">✓ Strong liquidity position</div>
+                    <div class="indicator">✓ Excellent profitability</div>
+                    <div class="indicator">✓ Conservative debt levels</div>
+                    <div class="indicator">✓ Efficient operations</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="setup-instructions">
+            <h2>🚀 Run the Full API Server</h2>
+
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-title">✅ 25+ Financial Ratios</div>
+                    <div>Liquidity, Profitability, Solvency, Efficiency</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">✅ Trend Analysis</div>
+                    <div>YoY, QoQ, CAGR, Moving Averages</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">✅ Risk Scoring</div>
+                    <div>0-100 Health Score with Red Flags</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">✅ REST API</div>
+                    <div>17 Endpoints with Authentication</div>
+                </div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Install Dependencies</strong>
+                <div class="command">pip install -r requirements.txt</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Initialize Database</strong>
+                <div class="command">python init_db.py</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Start API Server</strong>
+                <div class="command">python -m app.main</div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Access the API</strong>
+                <div class="command">http://localhost:8000/api/docs</div>
+                <p style="margin-top: 10px; color: #666;">
+                    Interactive API documentation with all 17 endpoints
+                </p>
+            </div>
+
+            <div
+                style="margin-top: 30px; padding: 20px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                <strong>💡 Quick Test (No Installation Required):</strong>
+                <div class="command" style="margin-top: 10px;">python test_ratio_engine.py</div>
+                <p style="margin-top: 10px; color: #666;">
+                    This tests the ratio engine with sample data - works immediately!
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
