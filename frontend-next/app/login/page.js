@@ -42,7 +42,12 @@ export default function LoginPage() {
             await api.login(email, password);
             window.location.href = '/';
         } catch (err) {
-            setError('Invalid email or password. Please try again.');
+            console.error("Login attempt failed:", err);
+            if (err.message.includes('failed') || err.message.includes('fetch')) {
+                setError('Cannot reach the server. Please ensure the API is online.');
+            } else {
+                setError(err.message || 'Invalid email or password. Please try again.');
+            }
         } finally {
             setLoading(false);
         }
