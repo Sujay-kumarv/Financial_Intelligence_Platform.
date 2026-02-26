@@ -100,12 +100,15 @@ def send_credentials_email(to_email: str, full_name: str, password: str) -> bool
             server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
             server.sendmail(settings.SMTP_USER, to_email, msg.as_string())
         logger.info(f"Credentials email sent to {to_email}")
-        return True
+        return True, "Email sent successfully"
+    except smtplib.SMTPAuthenticationError as e:
+        logger.error(f"SMTP Auth Error to {to_email}: {e}")
+        return False, "Authentication failed. Check if SMTP_PASSWORD is a valid App Password (not normal login password)."
     except Exception as e:
         logger.error(f"Failed to send email to {to_email}: {e}")
         print(f"\nEMAIL SEND FAILED: {e}")
         print(f"Credentials for {to_email}: password={password}\n")
-        return False
+        return False, str(e)
 
 
 def send_password_reset_email(to_email: str, full_name: str, token: str) -> bool:
