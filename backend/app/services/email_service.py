@@ -3,13 +3,16 @@ Email Service
 Sends credential emails to approved users via SMTP
 """
 import os
-import smtplib
 import logging
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import resend
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+# Initialize Resend with the API key
+# We will check settings.RESEND_API_KEY first, but fallback to SMTP_PASSWORD 
+# so the user doesn't strictly have to add a new environment variable if they overwrite the old one.
+resend.api_key = os.getenv("RESEND_API_KEY", settings.SMTP_PASSWORD)
 
 
 def send_credentials_email(to_email: str, full_name: str, password: str) -> bool:
@@ -17,15 +20,16 @@ def send_credentials_email(to_email: str, full_name: str, password: str) -> bool
     Send login credentials email to a newly approved user.
     Returns True if sent successfully, False otherwise.
     """
-    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+    if not resend.api_key or "re_" not in resend.api_key:
         logger.warning(
-            f"SMTP not configured. Credentials for {to_email}: password={password}"
+            f"Resend API Key not configured correctly. Credentials for {to_email}: password={password}"
         )
         print(f"\n{'='*60}")
-        print(f"EMAIL NOT SENT (SMTP not configured)")
+        print(f"EMAIL NOT SENT (Resend API Key not configured)")
         print(f"To: {to_email}")
         print(f"Name: {full_name}")
         print(f"Password: {password}")
+        print(f"IMPORTANT: To enable emails on Render, sign up for resend.com, get an API key (starts with re_), and set it as RESEND_API_KEY in Render Environment Variables.")
         print(f"{'='*60}\n")
         return False
 
@@ -86,35 +90,27 @@ def send_credentials_email(to_email: str, full_name: str, password: str) -> bool
     </html>
     """
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_USER}>"
-    msg["To"] = to_email
-    msg.attach(MIMEText(html_body, "html"))
-
     try:
-        if settings.SMTP_PORT == 465:
-            server = smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, timeout=15)
-            server.ehlo()
-        else:
-            server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=15)
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
+        from_email = f"{settings.SMTP_FROM_NAME} <onboarding@resend.dev>"
         
-        server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-        server.sendmail(settings.SMTP_USER, to_email, msg.as_string())
-        server.quit()
-        logger.info(f"Credentials email sent to {to_email}")
+        # If the user has verified a domain on Resend, they can override this via env vars
+        verified_domain = os.getenv("RESEND_FROM_EMAIL")
+        if verified_domain:
+            from_email = f"{settings.SMTP_FROM_NAME} <{verified_domain}>"
+
+        response = resend.Emails.send({
+            "from": from_email,
+            "to": [to_email],
+            "subject": subject,
+            "html": html_body
+        })
+        
+        logger.info(f"Credentials email sent via Resend to {to_email}. ID: {response.get('id')}")
         return True, "Email sent successfully"
-    except smtplib.SMTPAuthenticationError as e:
-        logger.error(f"SMTP Auth Error to {to_email}: {e}")
-        return False, "Authentication failed. Check if SMTP_PASSWORD is a valid App Password (not normal login password)."
     except Exception as e:
-        logger.error(f"Failed to send email to {to_email}: {e}")
-        print(f"\nEMAIL SEND FAILED: {e}")
-        print(f"Credentials for {to_email}: password={password}\n")
-        return False, str(e)
+        logger.error(f"Failed to send email via Resend to {to_email}: {e}")
+        print(f"\nRESEND EMAIL FAILED: {e}\n")
+        return False, f"Resend API Error: {str(e)}"
 
 
 def send_password_reset_email(to_email: str, full_name: str, token: str) -> bool:
@@ -124,10 +120,10 @@ def send_password_reset_email(to_email: str, full_name: str, token: str) -> bool
     frontend_url = settings.FRONTEND_URL
     reset_link = f"{frontend_url}/reset-password?token={token}"
 
-    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
-        logger.warning(f"SMTP not configured. Reset link for {to_email}: {reset_link}")
+    if not resend.api_key or "re_" not in resend.api_key:
+        logger.warning(f"Resend API Key not configured. Reset link for {to_email}: {reset_link}")
         print(f"\n{'='*60}")
-        print(f"PASSWORD RESET EMAIL (SMTP NOT CONFIGURED)")
+        print(f"PASSWORD RESET EMAIL (Resend API Key NOT CONFIGURED)")
         print(f"To: {to_email}")
         print(f"Link: {reset_link}")
         print(f"{'='*60}\n")
@@ -183,27 +179,21 @@ def send_password_reset_email(to_email: str, full_name: str, token: str) -> bool
     </html>
     """
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_USER}>"
-    msg["To"] = to_email
-    msg.attach(MIMEText(html_body, "html"))
-
     try:
-        if settings.SMTP_PORT == 465:
-            server = smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, timeout=15)
-            server.ehlo()
-        else:
-            server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=15)
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
-            
-        server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-        server.sendmail(settings.SMTP_USER, to_email, msg.as_string())
-        server.quit()
-        logger.info(f"Password reset email sent to {to_email}")
+        from_email = f"{settings.SMTP_FROM_NAME} <onboarding@resend.dev>"
+        verified_domain = os.getenv("RESEND_FROM_EMAIL")
+        if verified_domain:
+            from_email = f"{settings.SMTP_FROM_NAME} <{verified_domain}>"
+
+        response = resend.Emails.send({
+            "from": from_email,
+            "to": [to_email],
+            "subject": subject,
+            "html": html_body
+        })
+        
+        logger.info(f"Password reset email sent via Resend to {to_email}. ID: {response.get('id')}")
         return True
     except Exception as e:
-        logger.error(f"Failed to send reset email to {to_email}: {e}")
+        logger.error(f"Failed to send reset email via Resend to {to_email}: {e}")
         return False
