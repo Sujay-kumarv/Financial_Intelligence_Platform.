@@ -10,7 +10,7 @@ const nextConfig = {
         : `http://${apiHost}:8000/api/v1/:path*`;
     }
 
-    const backendPhotosUrl = backendUrl.replace('/api/v1', '');
+    const backendPhotosUrl = backendUrl.replace('/api/v1/:path*', '');
 
     return [
       {
@@ -19,7 +19,7 @@ const nextConfig = {
       },
       {
         source: '/uploads/photos/:path*',
-        destination: backendPhotosUrl,
+        destination: `${backendPhotosUrl}/uploads/photos/:path*`,
       },
     ];
   },
