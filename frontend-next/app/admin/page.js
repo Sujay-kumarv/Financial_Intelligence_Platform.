@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../lib/api';
 import Navbar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
@@ -10,6 +10,9 @@ import {
     Mail, Lock, User, AlertCircle, ChevronRight, ArrowLeft, Eye, EyeOff, Copy, Check,
     Upload, Globe, FileSpreadsheet, Loader2, ClipboardList, CheckCircle, XCircle, Clock, Image
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const CopilotPanel = dynamic(() => import('../../components/CopilotPanel'), { ssr: false });
 
 export default function AdminPage() {
     const { user: authUser, role } = useAuth();
@@ -68,6 +71,11 @@ export default function AdminPage() {
     const [registrations, setRegistrations] = useState([]);
     const [regFilter, setRegFilter] = useState('pending');
     const [rejectNotes, setRejectNotes] = useState({});
+
+    // Chat management
+    const [chatOpen, setChatOpen] = useState(false);
+    const [chatMessages, setChatMessages] = useState([]);
+    const [isTyping, setIsTyping] = useState(false);
 
     // Sidebar collapse tracking
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -396,6 +404,31 @@ export default function AdminPage() {
         }
     };
 
+    const handleSendMessage = useCallback(async (message) => {
+        const userMsg = { role: 'user', content: message };
+        setChatMessages(prev => [...prev, userMsg]);
+        setIsTyping(true);
+
+        try {
+            const response = await api.sendChatMessage(message, null, null);
+            setChatMessages(prev => [...prev, { role: 'assistant', content: response.content }]);
+        } catch (err) {
+            setChatMessages(prev => [...prev, {
+                role: 'assistant',
+                content: 'I encountered an error processing your request. Please try again.'
+            }]);
+        } finally {
+            setIsTyping(false);
+        }
+    }, []);
+
+    const handleCommand = useCallback((cmd) => {
+        if (cmd.trim()) {
+            setChatOpen(true);
+            handleSendMessage(cmd);
+        }
+    }, [handleSendMessage]);
+
     const inputClass = "w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-sm text-white placeholder:text-slate-600 focus:border-primary/50 outline-none transition-all";
     const selectClass = inputClass + " custom-select cursor-pointer";
 
@@ -408,7 +441,13 @@ export default function AdminPage() {
     return (
         <AdminGuard>
             <div className="min-h-screen bg-[#060E1F]">
-                <Navbar onCommand={() => { }} userName={user?.full_name || 'Admin'} onLogout={() => { window.location.href = '/login'; }} />
+                <Navbar
+                    onCommand={handleCommand}
+                    userName={user?.full_name || 'Admin'}
+                    onLogout={() => { window.location.href = '/login'; }}
+                    onToggleChat={() => setChatOpen(!chatOpen)}
+                    chatOpen={chatOpen}
+                />
                 <Sidebar
                     onSelectClient={(id) => {
                         setTab('companies');
@@ -423,7 +462,13 @@ export default function AdminPage() {
                     activeNav="admin"
                 />
 
-                <main className="pt-24 pb-16 px-8 transition-all duration-300" style={{ marginLeft: sidebarCollapsed ? 72 : 280 }}>
+                <main
+                    className="pt-24 pb-16 px-8 transition-all duration-300"
+                    style={{
+                        marginLeft: sidebarCollapsed ? 72 : 280,
+                        marginRight: chatOpen ? 400 : 0
+                    }}
+                >
                     {/* Header */}
                     <div className="flex items-center justify-between mb-10">
                         <div className="flex items-center gap-4">
@@ -1048,6 +1093,14 @@ export default function AdminPage() {
                         </div>
                     )}
                 </main>
+
+                <CopilotPanel
+                    isOpen={chatOpen}
+                    onClose={() => setChatOpen(false)}
+                    messages={chatMessages}
+                    onSendMessage={handleSendMessage}
+                    isTyping={isTyping}
+                />
             </div>
         </AdminGuard>
     );
