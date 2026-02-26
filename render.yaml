@@ -45,10 +45,7 @@ services:
     startCommand: "cd frontend-next && npm start"
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: backend
-          property: host
+        value: backend-469a.onrender.com
       - key: PORT
         value: 3000
 

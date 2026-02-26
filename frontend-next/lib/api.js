@@ -1,4 +1,12 @@
-const API_BASE_URL = '/api/v1';
+const getBaseUrl = () => {
+    if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) {
+        const host = process.env.NEXT_PUBLIC_API_URL;
+        return host.startsWith('http') ? `${host}/api/v1` : `https://${host}/api/v1`;
+    }
+    return '/api/v1';
+};
+
+const API_BASE_URL = getBaseUrl();
 
 class ApiService {
     constructor() {

@@ -22,7 +22,11 @@ export default function LoginPage() {
     const checkHealth = async () => {
         setHealthStatus('checking');
         try {
-            const resp = await fetch('/api/v1/health');
+            const baseUrl = typeof window !== 'undefined' && process.env.NEXT_PUBLIC_API_URL
+                ? (process.env.NEXT_PUBLIC_API_URL.startsWith('http') ? process.env.NEXT_PUBLIC_API_URL : `https://${process.env.NEXT_PUBLIC_API_URL}`)
+                : '';
+
+            const resp = await fetch(`${baseUrl}/api/v1/health`);
             if (resp.ok) {
                 setHealthStatus('healthy');
             } else {
