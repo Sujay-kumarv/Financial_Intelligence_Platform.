@@ -15,8 +15,26 @@ services:
         value: 8000
       - key: LOG_LEVEL
         value: info
-      - key: ENV
+      - key: ENVIRONMENT
         value: production
+      - key: DEBUG
+        value: false
+      - key: GROQ_API_KEY
+        sync: false # Set this in Render Dashboard
+      - key: JWT_SECRET_KEY
+        generateValue: true # Render will generate a random key
+      - key: ALLOWED_ORIGINS
+        value: "*" # Set to your frontend URL after first deploy
+      - key: FRONTEND_URL
+        value: "http://localhost:3000" # Update this in Render Dashboard after deployment
+      - key: SMTP_HOST
+        value: "smtp.gmail.com"
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
 
   # Frontend Next.js Service
   - type: web
@@ -37,3 +55,4 @@ services:
 databases:
   - name: financial-db
     plan: free
+
