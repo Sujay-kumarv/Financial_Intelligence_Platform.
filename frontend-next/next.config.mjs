@@ -1,22 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
-    let backendUrl = 'http://127.0.0.1:8005/api/v1/:path*';
+    let backendUrl = 'https://backend-469a.onrender.com/api/v1/:path*';
 
     if (process.env.NEXT_PUBLIC_API_URL) {
-      const apiHost = process.env.NEXT_PUBLIC_API_URL;
-      // If it's a full URL already
-      if (apiHost.startsWith('http')) {
-        backendUrl = `${apiHost}/api/v1/:path*`;
-      }
-      // If it's an internal Render host (e.g. "backend")
-      else if (!apiHost.includes('.')) {
-        backendUrl = `http://${apiHost}:8000/api/v1/:path*`;
-      }
-      // If it's a public Render host (e.g. "backend.onrender.com")
-      else {
-        backendUrl = `https://${apiHost}/api/v1/:path*`;
-      }
+      const apiHost = process.env.NEXT_PUBLIC_API_URL.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      backendUrl = (apiHost.includes('.') || apiHost.includes('onrender.com'))
+        ? `https://${apiHost}/api/v1/:path*`
+        : `http://${apiHost}/api/v1/:path*`;
     }
 
     const backendPhotosUrl = backendUrl.replace('/api/v1', '');
