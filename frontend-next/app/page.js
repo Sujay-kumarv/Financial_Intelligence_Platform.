@@ -135,6 +135,19 @@ export default function DashboardPage() {
     }
   }, [selectedClientIds]);
 
+  const handleCompare = useCallback(() => {
+    if (selectedClientIds.length < 2) return;
+
+    const names = companies
+      .filter(c => selectedClientIds.includes(c.id))
+      .map(c => c.name);
+
+    const prompt = `Can you provide a detailed financial comparison between ${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}?`;
+
+    setChatOpen(true);
+    handleSendMessage(prompt);
+  }, [selectedClientIds, companies, handleSendMessage]);
+
   const handleCommand = useCallback((cmd) => {
     if (cmd.trim()) {
       setChatOpen(true);
@@ -190,7 +203,7 @@ export default function DashboardPage() {
         onSelectClient={handleSelectClient}
         selectedClientIds={selectedClientIds}
         onAddClient={() => setShowOnboarding(true)}
-        onCompare={() => { }}
+        onCompare={handleCompare}
         activeNav={activeTab === 'portfolio' ? 'reports' : 'dashboard'}
         onNavChange={handleNavChange}
       />
