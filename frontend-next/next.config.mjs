@@ -7,7 +7,7 @@ const nextConfig = {
       const apiHost = process.env.NEXT_PUBLIC_API_URL.replace(/^https?:\/\//, '').replace(/\/$/, '');
       backendUrl = (apiHost.includes('.') || apiHost.includes('onrender.com'))
         ? `https://${apiHost}/api/v1/:path*`
-        : `http://${apiHost}/api/v1/:path*`;
+        : `http://${apiHost}:8000/api/v1/:path*`;
     }
 
     const backendPhotosUrl = backendUrl.replace('/api/v1', '');
