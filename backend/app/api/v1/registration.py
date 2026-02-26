@@ -202,17 +202,9 @@ async def approve_registration(
     db.commit()
     db.refresh(reg)
 
-    # Send credentials email
+    # Send credentials email (fails silently on Render free tier, but password is returned to UI)
     email_sent, email_error = send_credentials_email(reg.email, reg.full_name, raw_password)
     
-    if not email_sent:
-        # If email fails, rollback the approval so they can try again once SMTP is fixed
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Approval failed: Could not send email. SMTP Error: {email_error}"
-        )
-
     # Attach temp_password so admin can see/copy it
     reg.temp_password = raw_password
     return reg
@@ -282,13 +274,6 @@ async def resend_registration_email(
 
     # Send credentials email
     email_sent, email_error = send_credentials_email(reg.email, reg.full_name, new_raw_password)
-
-    if not email_sent:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to resend credentials. SMTP Error: {email_error}"
-        )
 
     # Attach temp_password to response so admin can see/copy it
     reg.temp_password = new_raw_password
