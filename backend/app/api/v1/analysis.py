@@ -3,6 +3,9 @@ Analysis Endpoints
 Financial ratio analysis, trend analysis, health scores
 """
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
+import io
+import csv
 from sqlalchemy.orm import Session
 from datetime import datetime
 
@@ -79,6 +82,75 @@ async def get_portfolio_insights(
     
     AI_INSIGHTS_CACHE = {"data": insight, "timestamp": now}
     return {"insight": insight}
+
+
+@router.get("/portfolio/export")
+async def export_portfolio_report(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_token)
+):
+    """
+    Export portfolio summary and insights as a CSV file.
+    """
+    print(">>> REACHED /portfolio/export ENDPOINT <<<")
+
+    engine = get_insight_engine(db)
+    summary = await engine.get_portfolio_summary()
+    
+    # Get insights (from cache if possible to avoid re-running LLM)
+    global AI_INSIGHTS_CACHE
+    insights = AI_INSIGHTS_CACHE["data"]
+    if not insights:
+        insights_res = await engine.generate_portfolio_insights()
+        insights = insights_res
+        AI_INSIGHTS_CACHE = {"data": insights, "timestamp": datetime.now()}
+    
+    # Create CSV content
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    writer.writerow(["Financial Intelligence Platform - Aggregate Performance Report"])
+    writer.writerow(["Generated At", datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
+    writer.writerow([])
+    
+    writer.writerow(["SECTION 1: Key Performance Indicators"])
+    writer.writerow(["Metric", "Value", "Notes"])
+    writer.writerow(["Total Managed Clients", summary['total_clients'], "Across all industries"])
+    writer.writerow(["Total Managed Assets (Revenue)", f"${summary['total_revenue']:,.2f}", "Sum of latest statements"])
+    writer.writerow(["Average Health Score", f"{summary['avg_health_score']:.1f}/100", "Weighted average of risk assessments"])
+    writer.writerow([])
+    
+    writer.writerow(["SECTION 2: Risk Distribution"])
+    writer.writerow(["Risk Level", "Count", "Percentage"])
+    for level, count in summary['risk_distribution'].items():
+        percentage = (count / summary['total_clients'] * 100) if summary['total_clients'] > 0 else 0
+        writer.writerow([level.capitalize(), count, f"{percentage:.1f}%"])
+    writer.writerow([])
+    
+    writer.writerow(["SECTION 3: Industry Exposure"])
+    writer.writerow(["Industry", "Client Count", "Market Share (%)"])
+    for industry, count in summary['industry_distribution'].items():
+        percentage = (count / summary['total_clients'] * 100) if summary['total_clients'] > 0 else 0
+        writer.writerow([industry, count, f"{percentage:.1f}%"])
+    writer.writerow([])
+    
+    writer.writerow(["SECTION 4: AI Strategic Narrative"])
+    # Split narrative by lines to avoid huge single cells in CSV
+    narrative_lines = insights.split('\n')
+    for line in narrative_lines:
+        if line.strip():
+            writer.writerow([line.strip()])
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode('utf-8-sig')), # Use UTF-8 with BOM for Excel compatibility
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=portfolio_performance_report.csv",
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
+    )
 
 
 @router.post("/ratios", response_model=RatioAnalysisResponse)

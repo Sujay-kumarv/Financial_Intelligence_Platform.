@@ -5,6 +5,7 @@ import { TrendingUp, Users, DollarSign, Activity, PieChart, Shield, ChevronRight
 export default function PortfolioOverview() {
     const [summary, setSummary] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [downloading, setDownloading] = useState(false);
 
     useEffect(() => {
         const fetchSummary = async () => {
@@ -25,6 +26,35 @@ export default function PortfolioOverview() {
         };
         fetchSummary();
     }, []);
+
+    const handleDownloadReport = async () => {
+        setDownloading(true);
+        try {
+            const token = localStorage.getItem('fin_intel_token');
+            const response = await fetch('/api/v1/analysis/portfolio/export', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Download failed');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `portfolio_performance_report_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error('Error downloading report:', error);
+            alert('Failed to download report. Please try again.');
+        } finally {
+            setDownloading(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -116,8 +146,12 @@ export default function PortfolioOverview() {
                                 <p key={i} className="mb-2">{line}</p>
                             ))}
                         </div>
-                        <button className="flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-widest mt-6 group-hover:gap-4 transition-all">
-                            Download Full Report <ChevronRight size={14} />
+                        <button
+                            onClick={handleDownloadReport}
+                            disabled={downloading}
+                            className={`flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-widest mt-6 group-hover:gap-4 transition-all ${downloading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            {downloading ? 'Preparing Report...' : 'Download Full Report'} <ChevronRight size={14} />
                         </button>
                     </div>
                 </div>
