@@ -11,6 +11,12 @@ export default function PortfolioOverview() {
             try {
                 const data = await api.request('/analysis/portfolio/summary');
                 setSummary(data);
+
+                // If the narrative is the placeholder, fetch the actual insights
+                if (data.ai_narrative === "Sujay AI is analyzing your portfolio...") {
+                    const insightData = await api.request('/analysis/portfolio/insights');
+                    setSummary(prev => ({ ...prev, ai_narrative: insightData.insight }));
+                }
             } catch (error) {
                 console.error('Failed to fetch portfolio summary:', error);
             } finally {

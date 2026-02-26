@@ -67,43 +67,74 @@ class AIInsightEngine:
     async def get_portfolio_summary(self) -> Dict[str, Any]:
         """
         Calculates aggregate metrics and risk distribution across all clients.
+        Optimized to avoid N+1 queries.
         """
+        from sqlalchemy import func
+
         companies = self.db.query(Company).all()
+        count = len(companies)
+        if count == 0:
+            return {
+                "total_clients": 0, "total_revenue": 0, "avg_health_score": 0,
+                "risk_distribution": {"low": 0, "medium": 0, "high": 0},
+                "industry_distribution": {}, "last_updated": datetime.now().isoformat()
+            }
+
+        company_ids = [c.id for c in companies]
+
+        # 1. Batch fetch latest RiskAssessments
+        latest_risk_sub = self.db.query(
+            RiskAssessment.company_id,
+            func.max(RiskAssessment.assessment_date).label('max_date')
+        ).filter(RiskAssessment.company_id.in_(company_ids)).group_by(RiskAssessment.company_id).subquery()
+
+        latest_risks = self.db.query(RiskAssessment).join(
+            latest_risk_sub,
+            (RiskAssessment.company_id == latest_risk_sub.c.company_id) & 
+            (RiskAssessment.assessment_date == latest_risk_sub.c.max_date)
+        ).all()
+
+        # 2. Batch fetch latest FinancialStatements for revenue
+        latest_stmt_sub = self.db.query(
+            FinancialStatement.company_id,
+            func.max(FinancialStatement.period_end).label('max_date')
+        ).filter(FinancialStatement.company_id.in_(company_ids)).group_by(FinancialStatement.company_id).subquery()
+
+        latest_stmts = self.db.query(FinancialStatement).join(
+            latest_stmt_sub,
+            (FinancialStatement.company_id == latest_stmt_sub.c.company_id) & 
+            (FinancialStatement.period_end == latest_stmt_sub.c.max_date)
+        ).all()
+
+        # Aggregate data
         total_revenue = 0
         avg_health_score = 0
         risk_dist = {"low": 0, "medium": 0, "high": 0}
-        industry_dist = {}
         
-        for c in companies:
-            # Get latest health score
-            risk = self.db.query(RiskAssessment).filter(
-                RiskAssessment.company_id == c.id
-            ).order_by(RiskAssessment.assessment_date.desc()).first()
-            
-            if risk:
-                avg_health_score += risk.overall_score
-                risk_level = risk.liquidity_risk.lower() # Simplified
-                if "critical" in risk_level: risk_dist["high"] += 1
-                elif "warning" in risk_level: risk_dist["medium"] += 1
-                else: risk_dist["low"] += 1
-            
-            # Get latest statement for revenue
-            stmt = self.db.query(FinancialStatement).filter(
-                FinancialStatement.company_id == c.id
-            ).order_by(FinancialStatement.period_end.desc()).first()
-            
-            if stmt:
-                rev = stmt.raw_data.get('income_statement', {}).get('revenue', 0)
-                total_revenue += float(str(rev).replace(',', '')) if rev else 0
+        for risk in latest_risks:
+            avg_health_score += risk.overall_score
+            risk_level = (risk.liquidity_risk or "").lower()
+            if "critical" in risk_level or "high" in risk_level: risk_dist["high"] += 1
+            elif "warning" in risk_level or "medium" in risk_level: risk_dist["medium"] += 1
+            else: risk_dist["low"] += 1
 
+        for stmt in latest_stmts:
+            if stmt.raw_data:
+                rev = stmt.raw_data.get('income_statement', {}).get('revenue', 0)
+                if rev:
+                    try:
+                        total_revenue += float(str(rev).replace(',', ''))
+                    except (ValueError, TypeError):
+                        pass
+
+        industry_dist = {}
+        for c in companies:
             industry_dist[c.industry] = industry_dist.get(c.industry, 0) + 1
 
-        count = len(companies)
-        
         return {
             "total_clients": count,
             "total_revenue": total_revenue,
-            "avg_health_score": avg_health_score / count if count > 0 else 0,
+            "avg_health_score": avg_health_score / len(latest_risks) if latest_risks else 0,
             "risk_distribution": risk_dist,
             "industry_distribution": industry_dist,
             "last_updated": datetime.now().isoformat()

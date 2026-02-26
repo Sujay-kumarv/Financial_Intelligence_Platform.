@@ -31,6 +31,7 @@ class ApiConnectionRequest(BaseModel):
     endpoint_path: Optional[str] = None
 
 
+@router.post("", response_model=CompanyResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=CompanyResponse, status_code=status.HTTP_201_CREATED)
 async def create_company(
     company_data: CompanyCreate, 

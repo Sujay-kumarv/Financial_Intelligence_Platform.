@@ -57,19 +57,40 @@ class MemoryService:
         
         self._initialized = True
 
+    def _sanitize_metadata(self, metadata: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Sanitize metadata for ChromaDB.
+        ChromaDB only supports str, int, float, or bool.
+        None values or complex objects are not allowed.
+        """
+        if not metadata:
+            return {}
+            
+        sanitized = {}
+        for key, value in metadata.items():
+            if value is None:
+                continue
+            if isinstance(value, (str, int, float, bool)):
+                sanitized[key] = value
+            else:
+                sanitized[key] = str(value)
+        return sanitized
+
     def store_interaction(self, message_id: str, content: str, role: str, metadata: Dict[str, Any]):
         """Store a chat message in the vector database"""
         if not CHROMA_AVAILABLE:
             return
             
+        sanitized_metadata = self._sanitize_metadata({
+            **metadata,
+            "role": role,
+            "timestamp": str(metadata.get("timestamp", ""))
+        })
+        
         self.interactions.add(
             ids=[message_id],
             documents=[content],
-            metadatas=[{
-                **metadata,
-                "role": role,
-                "timestamp": str(metadata.get("timestamp", ""))
-            }]
+            metadatas=[sanitized_metadata]
         )
 
     def retrieve_context(self, query: str, filters: Optional[Dict] = None, n_results: int = 3) -> List[str]:
@@ -78,10 +99,13 @@ class MemoryService:
             return []
             
         try:
+            # Sanitize filters (where clause)
+            sanitized_filters = self._sanitize_metadata(filters) if filters else None
+            
             results = self.interactions.query(
                 query_texts=[query],
                 n_results=n_results,
-                where=filters
+                where=sanitized_filters
             )
             return results['documents'][0] if results['documents'] else []
         except Exception as e:
@@ -97,7 +121,7 @@ class MemoryService:
         self.preferences.add(
             ids=[pref_id],
             documents=[preference_text],
-            metadatas=[{"user_id": user_id, "category": category}]
+            metadatas=[self._sanitize_metadata({"user_id": user_id, "category": category})]
         )
 
     def get_user_profile_context(self, user_id: str) -> str:
@@ -109,7 +133,7 @@ class MemoryService:
             results = self.preferences.query(
                 query_texts=["user preferences style format"],
                 n_results=5,
-                where={"user_id": user_id}
+                where=self._sanitize_metadata({"user_id": user_id})
             )
             if not results['documents'] or not results['documents'][0]:
                 return "Standard professional tone, comprehensive analysis."

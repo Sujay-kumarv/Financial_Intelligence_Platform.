@@ -63,7 +63,7 @@ class ApiService {
     async getCompany(id) { return this.request(`/companies/${id}`); }
 
     async createCompany(data) {
-        return this.request('/companies/', {
+        return this.request('/companies', {
             method: 'POST',
             body: JSON.stringify(data)
         });
@@ -88,17 +88,22 @@ class ApiService {
         if (this.token) {
             headers['Authorization'] = `Bearer ${this.token}`;
         }
-        // Do NOT set Content-Type — browser sets multipart boundary automatically
+
+        // Ensure we don't accidentally send global headers with application/json
         const response = await fetch(url, {
             method: 'POST',
-            headers,
+            headers: headers,
             body: formData
         });
+
         if (response.status === 401) {
-            localStorage.removeItem('fin_intel_token');
-            window.location.href = '/login';
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('fin_intel_token');
+                window.location.href = '/login';
+            }
             throw new Error('Session expired');
         }
+
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || 'Upload failed');
         return data;
@@ -123,7 +128,7 @@ class ApiService {
     async getUsers() { return this.request('/users'); }
 
     async createUser(data) {
-        return this.request('/users/', {
+        return this.request('/users', {
             method: 'POST',
             body: JSON.stringify(data)
         });
@@ -212,7 +217,7 @@ class ApiService {
 
         const response = await fetch(url, {
             method: 'POST',
-            headers,
+            headers: headers,
             body: formData
         });
 

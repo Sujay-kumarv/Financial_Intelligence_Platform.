@@ -26,7 +26,9 @@ router = APIRouter(prefix="/analysis")
 
 # Basic in-memory cache
 PORTFOLIO_CACHE = {"data": None, "timestamp": None}
-CACHE_TTL = 300 # 5 minutes
+AI_INSIGHTS_CACHE = {"data": None, "timestamp": None}
+CACHE_TTL = 300 # 5 minutes (Data)
+AI_CACHE_TTL = 3600 # 1 hour (AI Insights)
 
 @router.get("/portfolio/summary")
 async def get_portfolio_summary(
@@ -48,13 +50,35 @@ async def get_portfolio_summary(
     engine = get_insight_engine(db)
     summary = await engine.get_portfolio_summary()
     
-    # Add AI-generated narrative
-    summary["ai_narrative"] = await engine.generate_portfolio_insights()
+    # Return AI narrative from cache if it exists, but don't BLOCK on it
+    summary["ai_narrative"] = AI_INSIGHTS_CACHE["data"] or "Sujay AI is analyzing your portfolio..."
     
     # Update cache
     PORTFOLIO_CACHE = {"data": summary, "timestamp": now}
     
     return summary
+
+
+@router.get("/portfolio/insights")
+async def get_portfolio_insights(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_token)
+):
+    """
+    Get AI-generated narrative insights for the portfolio (Heavier call)
+    """
+    global AI_INSIGHTS_CACHE
+    
+    now = datetime.now()
+    if AI_INSIGHTS_CACHE["data"] and AI_INSIGHTS_CACHE["timestamp"]:
+        if (now - AI_INSIGHTS_CACHE["timestamp"]).total_seconds() < AI_CACHE_TTL:
+            return {"insight": AI_INSIGHTS_CACHE["data"]}
+
+    engine = get_insight_engine(db)
+    insight = await engine.generate_portfolio_insights()
+    
+    AI_INSIGHTS_CACHE = {"data": insight, "timestamp": now}
+    return {"insight": insight}
 
 
 @router.post("/ratios", response_model=RatioAnalysisResponse)

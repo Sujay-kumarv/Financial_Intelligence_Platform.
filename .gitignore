@@ -22,3 +22,6 @@ build/
 .vscode/
 .idea/
 .gemini/
+
+# Database
+backend/chroma_db/

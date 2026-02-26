@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     # Photo Upload
     PHOTO_UPLOAD_DIR: str = "./uploads/photos"
     
+    # Frontend URL for emails
+    FRONTEND_URL: str = "http://localhost:3000"
+    
     class Config:
         env_file = ".env"
         case_sensitive = True
