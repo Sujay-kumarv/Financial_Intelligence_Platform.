@@ -22,25 +22,30 @@ def seed_demo_data():
     
     try:
         # Check if demo user exists
-        existing_user = db.query(User).filter(User.email == "demo@financial.ai").first()
-        if existing_user:
-            print("[OK] Demo user already exists: demo@financial.ai / demo123")
-            return
+        demo_user = db.query(User).filter(User.email == "demo@financial.ai").first()
         
-        # Create demo user
         hashed_password = get_password_hash("demo123")
         
-        demo_user = User(
-            email="demo@financial.ai",
-            hashed_password=hashed_password,
-            full_name="Demo Analyst",
-            role="admin"
-        )
-        db.add(demo_user)
+        if demo_user:
+            print("[OK] Demo user already exists, resetting password...")
+            demo_user.hashed_password = hashed_password
+            demo_user.role = "admin"
+            demo_user.is_active = True
+        else:
+            print("Creating demo user...")
+            demo_user = User(
+                email="demo@financial.ai",
+                hashed_password=hashed_password,
+                full_name="Demo Analyst",
+                role="admin",
+                is_active=True
+            )
+            db.add(demo_user)
+        
         db.commit()
         db.refresh(demo_user)
         
-        print("[OK] Demo user created: demo@financial.ai / demo123")
+        print(f"[OK] Demo user ready: {demo_user.email} / demo123")
         
     except Exception as e:
         print(f"[ERROR] Error seeding data: {e}")
