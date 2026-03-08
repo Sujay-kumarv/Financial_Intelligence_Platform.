@@ -30,8 +30,8 @@ docker-compose up --build
 ```
 
 - **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **Interactive Docs**: http://localhost:8000/api/docs
+- **Backend API**: http://localhost:8005
+- **Interactive Docs**: http://localhost:8005/api/docs
 
 ---
 
@@ -83,8 +83,8 @@ python test_api.py
 ```
 
 Or visit in your browser:
-- API Docs: http://localhost:8000/api/docs
-- Health Check: http://localhost:8000/api/v1/health
+- API Docs: http://localhost:8005/api/docs
+- Health Check: http://localhost:8005/api/v1/health
 
 ---
 
@@ -97,7 +97,7 @@ python test_ratio_engine.py
 
 ### Test 2: API Health (After setup)
 ```powershell
-curl http://localhost:8000/api/v1/health
+curl http://localhost:8005/api/v1/health
 ```
 
 ### Test 3: Full API Test Suite (After setup)

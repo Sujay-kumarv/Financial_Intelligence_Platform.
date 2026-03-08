@@ -7,7 +7,7 @@ import json
 from datetime import date, datetime
 
 # Base URL
-BASE_URL = "http://localhost:8000/api/v1"
+BASE_URL = "http://localhost:8005/api/v1"
 
 def print_section(title):
     """Print formatted section header"""

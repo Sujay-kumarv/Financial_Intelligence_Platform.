@@ -78,10 +78,10 @@ photos_path = PathlibPath(settings.PHOTO_UPLOAD_DIR)
 if photos_path.exists():
     app.mount("/uploads/photos", StaticFiles(directory=str(photos_path)), name="photos")
 
-# Mount frontend static files
-frontend_path = Path(__file__).parent.parent.parent / "frontend"
-if frontend_path.exists():
-    app.mount("/", StaticFiles(directory=str(frontend_path), html=True), name="frontend")
+# # Mount frontend static files
+# frontend_path = Path(__file__).parent.parent.parent / "frontend"
+# if frontend_path.exists():
+#     app.mount("/", StaticFiles(directory=str(frontend_path), html=True), name="frontend")
 
 # Root API endpoint (only accessible if frontend not mounted)
 @app.get("/api")

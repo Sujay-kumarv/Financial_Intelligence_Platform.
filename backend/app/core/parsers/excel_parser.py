@@ -6,6 +6,7 @@ import pandas as pd
 from typing import Dict, Optional, List
 from datetime import datetime
 import re
+from app.core.parsers.pdf_parser import PDFStatementParser
 
 
 class ExcelStatementParser:
@@ -242,6 +243,8 @@ def parse_statement_file(file_path: str) -> Dict[str, any]:
         parser = ExcelStatementParser(file_path)
     elif file_path.endswith('.csv'):
         parser = CSVStatementParser(file_path)
+    elif file_path.endswith('.pdf'):
+        parser = PDFStatementParser(file_path)
     else:
         raise ValueError(f"Unsupported file format: {file_path}")
     

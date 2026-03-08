@@ -76,6 +76,7 @@ export default function AdminPage() {
     const [chatOpen, setChatOpen] = useState(false);
     const [chatMessages, setChatMessages] = useState([]);
     const [isTyping, setIsTyping] = useState(false);
+    const [currentSessionId, setCurrentSessionId] = useState(null);
 
     // Sidebar collapse tracking
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -410,7 +411,12 @@ export default function AdminPage() {
         setIsTyping(true);
 
         try {
-            const response = await api.sendChatMessage(message, null, null);
+            const response = await api.sendChatMessage(message, currentSessionId, null);
+
+            if (response.session_id) {
+                setCurrentSessionId(response.session_id);
+            }
+
             setChatMessages(prev => [...prev, { role: 'assistant', content: response.content }]);
         } catch (err) {
             setChatMessages(prev => [...prev, {
@@ -420,7 +426,7 @@ export default function AdminPage() {
         } finally {
             setIsTyping(false);
         }
-    }, []);
+    }, [currentSessionId]);
 
     const handleCommand = useCallback((cmd) => {
         if (cmd.trim()) {

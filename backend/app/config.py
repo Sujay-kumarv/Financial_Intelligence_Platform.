@@ -41,7 +41,7 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
     
     # File Upload
-    MAX_UPLOAD_SIZE_MB: int = 50
+    MAX_UPLOAD_SIZE_MB: int = 200
     UPLOAD_DIR: str = "./uploads"
     
     # Rate Limiting

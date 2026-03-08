@@ -7,14 +7,14 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import json
+import logging
 
 from app.db.database import get_db
+from app.api.v1.auth_deps import get_current_user_from_token
 from app.schemas.schemas import ChatMessageRequest, ChatMessageResponse, ChatSessionResponse, ChatSessionCreate, AIFeedbackCreate, AIFeedbackResponse
 from app.db.models import ChatSession, ChatMessage, ComputedMetric, FinancialStatement, User, AIFeedback
 from app.services.llm_service import gemini_service
 from app.services.memory_service import memory_service
-from app.api.v1.auth_deps import get_current_user_from_token
-
 router = APIRouter(prefix="/chat")
 
 
@@ -110,6 +110,36 @@ async def send_message(request: ChatMessageRequest, db: Session = Depends(get_db
     # Get user profile for adaptation
     user_context = memory_service.get_user_profile_context(current_user.id)
     
+    # Get effective company_id (request takes priority over session)
+    effective_company_id = request.company_id or session.company_id
+    
+    # Proactive Context Detection: If no company ID is set, check if user mentions an available company
+    if not effective_company_id:
+        from app.db.models import Company
+        all_companies_objs = db.query(Company).all()
+        normalized_message = request.message.lower()
+        
+        # Stop words and suffixes to ignore for better matching
+        ignore_words = {"pvt", "ltd", "limited", "corp", "corporation", "inc", "incorporated", "and", "the"}
+        
+        for company in all_companies_objs:
+            # Match keywords from company name (e.g. "Tata" from "Tata Motors")
+            name_words = [w for w in company.name.lower().split() if w not in ignore_words and len(w) > 2]
+            if not name_words:
+                name_words = [company.name.lower()]
+            
+            # If any significant keyword found in message, OR message matches a keyword
+            if any(word in normalized_message for word in name_words):
+                effective_company_id = company.id
+                # Update using a fresh session to ensure persistence
+                from app.db.database import SessionLocal
+                with SessionLocal() as fresh_db:
+                    fresh_session = fresh_db.query(ChatSession).filter(ChatSession.id == session.id).first()
+                    if fresh_session:
+                        fresh_session.company_id = company.id
+                        fresh_db.commit()
+                break
+    
     # Store user message in vector memory
     memory_service.store_interaction(
         message_id=user_message.id,
@@ -118,7 +148,7 @@ async def send_message(request: ChatMessageRequest, db: Session = Depends(get_db
         metadata={
             "user_id": current_user.id,
             "session_id": session.id,
-            "company_id": request.company_id,
+            "company_id": effective_company_id,
             "role": current_user.role
         }
     )
@@ -127,10 +157,10 @@ async def send_message(request: ChatMessageRequest, db: Session = Depends(get_db
     context_metrics = {}
     company_info = None
     
-    if request.company_id:
+    if effective_company_id:
         # Get company information
         from app.db.models import Company
-        company = db.query(Company).filter(Company.id == request.company_id).first()
+        company = db.query(Company).filter(Company.id == effective_company_id).first()
         if company:
             company_info = {
                 'name': company.name,
@@ -140,7 +170,7 @@ async def send_message(request: ChatMessageRequest, db: Session = Depends(get_db
         
         # Get latest statement
         latest_statement = db.query(FinancialStatement).filter(
-            FinancialStatement.company_id == request.company_id
+            FinancialStatement.company_id == effective_company_id
         ).order_by(FinancialStatement.period_end.desc()).first()
         
         if latest_statement:
@@ -149,6 +179,24 @@ async def send_message(request: ChatMessageRequest, db: Session = Depends(get_db
             ).all()
             
             context_metrics = {m.metric_name: m.metric_value for m in metrics}
+    # Get all available companies for dynamic prompting
+    from app.db.models import Company
+    all_companies = db.query(Company).all()
+    available_companies = [c.name for c in all_companies]
+    
+    # Retrieve recent history (last 10 messages) for NLP context
+    history_objs = db.query(ChatMessage).filter(
+        ChatMessage.session_id == session.id,
+        ChatMessage.id != user_message.id  # Exclude current message
+    ).order_by(ChatMessage.created_at.desc()).limit(10).all()
+    
+    # Format history for LLM (in chronological order)
+    message_history = [{"role": m.role, "content": m.content} for m in reversed(history_objs)]
+    
+    print(f"DEBUG: [chat.py] effective_company_id={effective_company_id}")
+    print(f"DEBUG: [chat.py] history_len={len(message_history)}")
+    for i, h in enumerate(message_history):
+        print(f"DEBUG: [chat.py] history[{i}]={h['role']}: {h['content'][:30]}...")
     
     # Detect intent and generate AI response
     from app.services.llm_service import gemini_service
@@ -159,7 +207,9 @@ async def send_message(request: ChatMessageRequest, db: Session = Depends(get_db
         user_message=request.message,
         computed_metrics=context_metrics,
         company_context=company_info,
-        user_id=current_user.id
+        user_id=current_user.id,
+        available_companies=available_companies,
+        message_history=message_history
     )
     
     # Combined metadata
@@ -190,7 +240,7 @@ async def send_message(request: ChatMessageRequest, db: Session = Depends(get_db
         metadata={
             "user_id": current_user.id,
             "session_id": session.id,
-            "company_id": request.company_id,
+            "company_id": effective_company_id,
             "role": current_user.role
         }
     )

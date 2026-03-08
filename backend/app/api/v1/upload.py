@@ -45,6 +45,17 @@ async def upload_statement(
             detail=f"Unsupported file type. Allowed: {', '.join(allowed_extensions)}"
         )
     
+    # Validate file size
+    file.file.seek(0, os.SEEK_END)
+    file_size = file.file.tell() / (1024 * 1024)  # Convert to MB
+    file.file.seek(0)  # Reset pointer
+    
+    if file_size > settings.MAX_UPLOAD_SIZE_MB:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large. Maximum size allowed is {settings.MAX_UPLOAD_SIZE_MB}MB."
+        )
+    
     # Save file
     file_path = os.path.join(settings.UPLOAD_DIR, file.filename)
     with open(file_path, "wb") as buffer:

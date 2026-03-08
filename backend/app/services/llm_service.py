@@ -55,7 +55,9 @@ class GroqService:
         user_message: str,
         computed_metrics: Optional[Dict] = None,
         company_context: Optional[Dict] = None,
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
+        available_companies: Optional[List[str]] = None,
+        message_history: Optional[List[Dict]] = None
     ) -> str:
         """
         Generate AI explanation for financial queries
@@ -70,17 +72,28 @@ class GroqService:
             
             if user_id:
                 user_profile = memory_service.get_user_profile_context(user_id)
+                # We still retrieve from vector memory for long-term facts
                 past_context = memory_service.retrieve_context(user_message, filters={"user_id": user_id})
             
             # 2. Build adaptive prompt
-            prompt = self._build_prompt(
+            user_prompt, system_prompt = self._build_prompt(
                 user_message, 
                 computed_metrics, 
                 company_context, 
                 user_profile=user_profile,
-                past_context=past_context
+                past_context=past_context,
+                available_companies=available_companies,
+                message_history=message_history
             )
-            return self._chat(prompt)
+            
+            print("\n" + "="*50)
+            print("PROMPT SENT TO LLM:")
+            print("-"*50)
+            print(f"SYSTEM: {system_prompt[:200]}...")
+            print(f"USER: {user_prompt}")
+            print("="*50 + "\n")
+            
+            return self._chat(user_prompt, system_prompt=system_prompt)
         except Exception as e:
             print(f"Groq API Error: {str(e)}")
             return self._get_fallback_response(user_message, computed_metrics)
@@ -128,7 +141,9 @@ class GroqService:
         computed_metrics: Optional[Dict],
         company_context: Optional[Dict],
         user_profile: Optional[str] = None,
-        past_context: Optional[List[str]] = None
+        past_context: Optional[List[str]] = None,
+        available_companies: Optional[List[str]] = None,
+        message_history: Optional[List[Dict]] = None
     ) -> str:
         """
         Build context-aware, adaptive prompt
@@ -137,56 +152,61 @@ class GroqService:
         prompt_parts = []
         
         # System context
-        prompt_parts.append(f"""You are Sujay AI Analyst, a Senior Financial Analyst and Professional Financial Advisor with the expertise of a Chartered Accountant (CA) and an Investment Banker. 
-Your tone must be highly professional, authoritative, and precise, yet accessible to your client. You are powered by Sujay Kumar AI Studio.
-
-Your role is to provide deep-dive financial intelligence, risk assessments, and strategic recommendations.
-
-USER CONTEXT & ADAPTATION:
-- **User Profile/Preferences**: {user_profile or "Standard professional advisor tone."}
-- Your responses should adapt to the user's preferred detail level and terminology based on the profile above.
-
-CORE PRINCIPLES OF YOUR PERSONA:
-1. **Professionalism**: Speak like a seasoned Banker or CA. Use standard financial terminology.
-2. **Precision**: Be exact with your interpretations of ratios. Explain context.
-3. **Strategic Counsel**: Act as a trusted Financial Advisor. Provide action items.
-4. **Authority**: Your analysis should carry the weight of a professional audit.
-
-RESPONSE STRUCTURE:
-1. **Executive Summary**: A high-level overview.
-2. **Technical Analysis**: Deep dive with bold headers.
-3. **Strategic Recommendations**: Professional advice.
-4. **Risk Profile**: Clear red flags.
-
-""")
+        companies_str = ", ".join(available_companies) if available_companies else "the companies in your database"
         
-        # Memory / Past Context
+        SYSTEM_PROMPT = f"""
+You are a smart and interactive **Financial Data Assistant**. Your job is to help users explore company data, financial reports, and key insights.
+
+====================================================
+🚨 CONVERSATION PRINCIPLES (NLP AWARENESS)
+====================================================
+1. **Maintain Context**: You MUST remember the "active" company or topic discussed in previous turns.
+2. **Resolve References**: If the user says "its", "their", "that company", or similar, resolve it to the most recently discussed entity.
+3. **Implicit Confirmation**: If the user asks for "Chairman's message" after discussing "Tata Motors", assume they want the one for Tata Motors immediately.
+4. **Natural Flow**: Do not reset the context unless the user explicitly switches to a different company.
+5. **Short & Precise**: Keep responses under 6 lines. Always suggest a logical next step.
+
+====================================================
+🏢 AVAILABLE COMPANIES
+====================================================
+{companies_str}
+"""
+        
+        # Start building user prompt
+        
+        # 1. Recent Chat History (Most Important for NLP Flow)
+        if message_history:
+            prompt_parts.append("RECENT CONVERSATION HISTORY:\n")
+            for msg in message_history[-5:]:  # Last 5 messages for focus
+                role_label = "User" if msg['role'] == 'user' else "Assistant"
+                prompt_parts.append(f"{role_label}: {msg['content']}\n")
+            prompt_parts.append("\n")
+
+        # 2. Long-term memory / Facts
         if past_context:
-            prompt_parts.append("RELEVANT PAST CONTEXT FOR THIS USER:\n")
+            prompt_parts.append("RELEVANT PAST KNOWLEDGE:\n")
             for ctx in past_context:
                 prompt_parts.append(f"  - {ctx}\n")
-            prompt_parts.append("(Reference past analysis if relevant to maintain continuity)\n\n")
+            prompt_parts.append("\n")
 
-        # Company context
-        
-        # Company context
+        # 3. Active Company Context
         if company_context:
-            prompt_parts.append(f"Company: {company_context.get('name', 'Unknown')}\n")
+            prompt_parts.append(f"CURRENT ACTIVE CONTEXT: {company_context.get('name', 'Unknown')}\n")
             if company_context.get('industry'):
                 prompt_parts.append(f"Industry: {company_context['industry']}\n")
             prompt_parts.append("\n")
         
-        # Financial metrics context
+        # 4. Data grounding
         if computed_metrics:
-            prompt_parts.append("COMPUTED FINANCIAL METRICS:\n")
+            prompt_parts.append("COMPUTED FINANCIAL METRICS FOR ACTIVE CONTEXT:\n")
             prompt_parts.append(self._format_metrics(computed_metrics))
             prompt_parts.append("\n")
         
-        # User question
-        prompt_parts.append(f"USER QUESTION: {user_message}\n\n")
-        prompt_parts.append("Provide a clear, professional analysis:")
+        # 5. Current Message
+        prompt_parts.append(f"LATEST USER MESSAGE: {user_message}\n")
+        prompt_parts.append("Respond as a helpful, conversationally-aware analyst:")
         
-        return "".join(prompt_parts)
+        return "".join(prompt_parts), SYSTEM_PROMPT
     
     def _format_metrics(self, metrics: Dict) -> str:
         """Format metrics for prompt context"""

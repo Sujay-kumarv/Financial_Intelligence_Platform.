@@ -34,7 +34,7 @@
 docker-compose up --build
 ```
 - Dashboad: http://localhost:3000
-- API Docs: http://localhost:8000/api/docs
+- API Docs: http://localhost:8005/api/docs
 
 ### 💻 Local Development
 
@@ -232,7 +232,7 @@ GET    /api/v1/chat/sessions/{id}
 ## 📚 Documentation
 
 - [Implementation Plan](../implementation_plan.md) - Complete architecture
-- [API Documentation](http://localhost:8000/api/docs) - Interactive API docs
+- [API Documentation](http://localhost:8005/api/docs) - Interactive API docs
 - [Database Schema](#database-schema-8-tables) - See above
 
 ## 🤝 Contributing

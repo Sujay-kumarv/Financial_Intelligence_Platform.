@@ -36,6 +36,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'portfolio'
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState('');
+  const [currentSessionId, setCurrentSessionId] = useState(null);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -123,7 +124,12 @@ export default function DashboardPage() {
 
     try {
       const companyId = selectedClientIds.length === 1 ? selectedClientIds[0] : null;
-      const response = await api.sendChatMessage(message, null, companyId);
+      const response = await api.sendChatMessage(message, currentSessionId, companyId);
+
+      if (response.session_id) {
+        setCurrentSessionId(response.session_id);
+      }
+
       setChatMessages(prev => [...prev, { role: 'assistant', content: response.content }]);
     } catch (err) {
       setChatMessages(prev => [...prev, {
@@ -133,7 +139,7 @@ export default function DashboardPage() {
     } finally {
       setIsTyping(false);
     }
-  }, [selectedClientIds]);
+  }, [selectedClientIds, currentSessionId]);
 
   const handleCompare = useCallback(() => {
     if (selectedClientIds.length < 2) return;
