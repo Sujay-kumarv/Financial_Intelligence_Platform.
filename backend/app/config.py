@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     # Photo Upload
     PHOTO_UPLOAD_DIR: str = "./uploads/photos"
     
+    # Resend Email Integration
+    RESEND_API_KEY: str = ""
+    RESEND_FROM_EMAIL: str = ""
+    
     # Frontend URL for emails
     FRONTEND_URL: str = "http://localhost:3000"
     

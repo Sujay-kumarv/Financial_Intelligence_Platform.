@@ -10,9 +10,7 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 # Initialize Resend with the API key
-# We will check settings.RESEND_API_KEY first, but fallback to SMTP_PASSWORD 
-# so the user doesn't strictly have to add a new environment variable if they overwrite the old one.
-resend.api_key = os.getenv("RESEND_API_KEY", settings.SMTP_PASSWORD)
+resend.api_key = settings.RESEND_API_KEY
 
 
 def send_credentials_email(to_email: str, full_name: str, password: str) -> bool:
@@ -31,7 +29,7 @@ def send_credentials_email(to_email: str, full_name: str, password: str) -> bool
         print(f"Password: {password}")
         print(f"IMPORTANT: To enable emails on Render, sign up for resend.com, get an API key (starts with re_), and set it as RESEND_API_KEY in Render Environment Variables.")
         print(f"{'='*60}\n")
-        return False
+        return False, "Resend API Key not configured"
 
     subject = f"Welcome to {settings.SMTP_FROM_NAME} — Your Login Credentials"
 
